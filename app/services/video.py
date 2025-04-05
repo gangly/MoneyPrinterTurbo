@@ -288,6 +288,7 @@ def generate_video(
 
         logger.info(f"using font: {font_path}")
 
+    # todo 第二行字幕没有居中显示
     def create_text_clip(subtitle_item):
         params.font_size = int(params.font_size)
         params.stroke_width = int(params.stroke_width)
@@ -366,15 +367,8 @@ def generate_video(
             logger.error(f"failed to add bgm: {str(e)}")
 
     video_clip = video_clip.with_audio(audio_clip)
-
-    # add title to video
-    # 2. 创建标题文本（持续整个视频时长）
-    title_txt_clip = make_textclip(params.video_subject)
-    title_txt_clip = title_txt_clip.with_duration(video_clip.duration)  # 标题时长与视频一致
-    # 3. 设置标题位置（例如顶部居中）
-    title_txt_clip = title_txt_clip.with_position(("center", video_height * 0.2))
-    # 4. 将标题叠加到视频上
-    video_clip = CompositeVideoClip([video_clip, title_txt_clip])
+    # add video title
+    video_clip = make_video_title(video_clip, params.video_subject, font_path, 80)
 
     video_clip.write_videofile(
         output_file,
@@ -467,13 +461,13 @@ if __name__ == "__main__":
     # #     if file.endswith(".mp4"):
     # #         video_paths.append(os.path.join(utils.storage_dir("test"), file))
     # #
-    combine_videos(combined_video_path=video_file,
-                   audio_file=audio_file,
-                   video_paths=video_paths,
-                   video_aspect=VideoAspect.portrait,
-                   video_concat_mode=VideoConcatMode.random,
-                   max_clip_duration=5,
-                   threads=2)
+    # combine_videos(combined_video_path=video_file,
+    #                audio_file=audio_file,
+    #                video_paths=video_paths,
+    #                video_aspect=VideoAspect.portrait,
+    #                video_concat_mode=VideoConcatMode.random,
+    #                max_clip_duration=5,
+    #                threads=2)
     #
     cfg = VideoParams(video_subject= '小鹏汽车分析'
                       )
