@@ -139,7 +139,7 @@ def combine_videos(
 
             shuffle_side = random.choice(["left", "right", "top", "bottom"])
             logger.info(f"Using transition mode: {video_transition_mode}")
-            if video_transition_mode.value == VideoTransitionMode.none.value:
+            if video_transition_mode is None:
                 clip = clip
             elif video_transition_mode.value == VideoTransitionMode.fade_in.value:
                 clip = video_effects.fadein_transition(clip, 1)
@@ -171,6 +171,7 @@ def combine_videos(
     # https://github.com/harry0703/MoneyPrinterTurbo/issues/111#issuecomment-2032354030
     video_clip.write_videofile(
         filename=combined_video_path,
+        # codec='h264_nvenc',
         threads=threads,
         logger=None,
         temp_audiofile_path=output_dir,
@@ -239,6 +240,22 @@ def wrap_text(text, max_width, font="Arial", fontsize=60):
     # logger.warning(f"wrapped text: {result}")
     return result, height
 
+def make_video_title(video_clip, title, font_path, font_size):
+    # add title to video
+    # 2. 创建标题文本（持续整个视频时长）
+    title_txt_clip = TextClip(
+            text=title,
+            font=font_path,
+            font_size=font_size,
+            color="yellow",
+        )
+
+    title_txt_clip = title_txt_clip.with_duration(video_clip.duration)  # 标题时长与视频一致
+    # 3. 设置标题位置（例如顶部居中）
+    title_txt_clip = title_txt_clip.with_position(("center", video_clip.h * 0.15))
+    # 4. 将标题叠加到视频上
+    video_clip = CompositeVideoClip([video_clip, title_txt_clip])
+    return video_clip
 
 def generate_video(
     video_path: str,
@@ -275,7 +292,8 @@ def generate_video(
         params.font_size = int(params.font_size)
         params.stroke_width = int(params.stroke_width)
         phrase = subtitle_item[1]
-        max_width = video_width * 0.9
+        # max_width = video_width * 0.9
+        max_width = video_width * 0.85
         wrapped_txt, txt_height = wrap_text(
             phrase, max_width=max_width, font=font_path, fontsize=params.font_size
         )
@@ -293,7 +311,8 @@ def generate_video(
         _clip = _clip.with_end(subtitle_item[0][1])
         _clip = _clip.with_duration(duration)
         if params.subtitle_position == "bottom":
-            _clip = _clip.with_position(("center", video_height * 0.95 - _clip.h))
+            # _clip = _clip.with_position(("center", video_height * 0.95 - _clip.h))
+            _clip = _clip.with_position(("center", video_height * 0.85 - _clip.h))
         elif params.subtitle_position == "top":
             _clip = _clip.with_position(("center", video_height * 0.05))
         elif params.subtitle_position == "custom":
@@ -347,8 +366,19 @@ def generate_video(
             logger.error(f"failed to add bgm: {str(e)}")
 
     video_clip = video_clip.with_audio(audio_clip)
+
+    # add title to video
+    # 2. 创建标题文本（持续整个视频时长）
+    title_txt_clip = make_textclip(params.video_subject)
+    title_txt_clip = title_txt_clip.with_duration(video_clip.duration)  # 标题时长与视频一致
+    # 3. 设置标题位置（例如顶部居中）
+    title_txt_clip = title_txt_clip.with_position(("center", video_height * 0.2))
+    # 4. 将标题叠加到视频上
+    video_clip = CompositeVideoClip([video_clip, title_txt_clip])
+
     video_clip.write_videofile(
         output_file,
+        # codec='h264_nvenc',
         audio_codec="aac",
         temp_audiofile_path=output_dir,
         threads=params.n_threads or 2,
@@ -400,7 +430,10 @@ def preprocess_video(materials: List[MaterialInfo], clip_duration=4):
 
             # Output the video to a file.
             video_file = f"{material.url}.mp4"
-            final_clip.write_videofile(video_file, fps=30, logger=None)
+            final_clip.write_videofile(video_file,
+                                       # codec='h264_nvenc',
+                                       fps=30,
+                                       logger=None)
             final_clip.close()
             del final_clip
             material.url = video_file
@@ -409,11 +442,11 @@ def preprocess_video(materials: List[MaterialInfo], clip_duration=4):
 
 
 if __name__ == "__main__":
-    m = MaterialInfo()
-    m.url = "/Users/harry/Downloads/IMG_2915.JPG"
-    m.provider = "local"
-    materials = preprocess_video([m], clip_duration=4)
-    print(materials)
+    # m = MaterialInfo()
+    # m.url = "/Users/harry/Downloads/IMG_2915.JPG"
+    # m.provider = "local"
+    # materials = preprocess_video([m], clip_duration=4)
+    # print(materials)
 
     # txt_en = "Here's your guide to travel hacks for budget-friendly adventures"
     # txt_zh = "测试长字段这是您的旅行技巧指南帮助您进行预算友好的冒险"
@@ -422,47 +455,49 @@ if __name__ == "__main__":
     #     t, h = wrap_text(text=txt, max_width=1000, font=font, fontsize=60)
     #     print(t)
     #
-    # task_id = "aa563149-a7ea-49c2-b39f-8c32cc225baf"
-    # task_dir = utils.task_dir(task_id)
-    # video_file = f"{task_dir}/combined-1.mp4"
-    # audio_file = f"{task_dir}/audio.mp3"
-    # subtitle_file = f"{task_dir}/subtitle.srt"
-    # output_file = f"{task_dir}/final.mp4"
-    #
+    task_id = "ba563149-a7ea-49c2-b39f-8c32cc225baf"
+    task_dir = utils.task_dir(task_id)
+    video_file = f"{task_dir}/combined-1.mp4"
+    audio_file = f"{task_dir}/audio.mp3"
+    subtitle_file = f"{task_dir}/subtitle.srt"
+    output_file = f"{task_dir}/final.mp4"
+
     # # video_paths = []
     # # for file in os.listdir(utils.storage_dir("test")):
     # #     if file.endswith(".mp4"):
     # #         video_paths.append(os.path.join(utils.storage_dir("test"), file))
     # #
-    # # combine_videos(combined_video_path=video_file,
-    # #                audio_file=audio_file,
-    # #                video_paths=video_paths,
-    # #                video_aspect=VideoAspect.portrait,
-    # #                video_concat_mode=VideoConcatMode.random,
-    # #                max_clip_duration=5,
-    # #                threads=2)
+    combine_videos(combined_video_path=video_file,
+                   audio_file=audio_file,
+                   video_paths=video_paths,
+                   video_aspect=VideoAspect.portrait,
+                   video_concat_mode=VideoConcatMode.random,
+                   max_clip_duration=5,
+                   threads=2)
     #
-    # cfg = VideoParams()
-    # cfg.video_aspect = VideoAspect.portrait
-    # cfg.font_name = "STHeitiMedium.ttc"
-    # cfg.font_size = 60
-    # cfg.stroke_color = "#000000"
-    # cfg.stroke_width = 1.5
-    # cfg.text_fore_color = "#FFFFFF"
-    # cfg.text_background_color = "transparent"
-    # cfg.bgm_type = "random"
-    # cfg.bgm_file = ""
-    # cfg.bgm_volume = 1.0
-    # cfg.subtitle_enabled = True
-    # cfg.subtitle_position = "bottom"
-    # cfg.n_threads = 2
-    # cfg.paragraph_number = 1
-    #
-    # cfg.voice_volume = 1.0
-    #
-    # generate_video(video_path=video_file,
-    #                audio_path=audio_file,
-    #                subtitle_path=subtitle_file,
-    #                output_file=output_file,
-    #                params=cfg
-    #                )
+    cfg = VideoParams(video_subject= '小鹏汽车分析'
+                      )
+    cfg.video_script = '最近小鹏汽车表现相当炸裂，市值突破1500亿，股价从今年1月份开始到现在接近翻倍，如果从去年底部开始计算翻2倍'
+    cfg.video_aspect = VideoAspect.portrait
+    cfg.font_name = "STHeitiMedium.ttc"
+    cfg.font_size = 60
+    cfg.stroke_color = "#000000"
+    cfg.stroke_width = 1.5
+    cfg.text_fore_color = "#FFFFFF"
+    cfg.text_background_color = "transparent"
+    cfg.bgm_type = "random"
+    cfg.bgm_file = ""
+    cfg.bgm_volume = 1.0
+    cfg.subtitle_enabled = True
+    cfg.subtitle_position = "bottom"
+    cfg.n_threads = 4
+    cfg.paragraph_number = 1
+
+    cfg.voice_volume = 1.0
+
+    generate_video(video_path=video_file,
+                   audio_path=audio_file,
+                   subtitle_path=subtitle_file,
+                   output_file=output_file,
+                   params=cfg
+                   )

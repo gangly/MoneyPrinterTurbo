@@ -124,9 +124,9 @@
     # 比如 https://xxxx.com/tasks/6357f542-a4e1-46a1-b4c9-bf3bd0df5285/final-1.mp4
     # endpoint="https://xxxx.com"
 
-    # When the video is successfully generated, the API service provides a download endpoint for the video, defaulting to the service's current address and listening port.
+    # When the video is successfully generated, the API services provides a download endpoint for the video, defaulting to the services's current address and listening port.
     # For example, http://127.0.0.1:8080/tasks/6357f542-a4e1-46a1-b4c9-bf3bd0df5285/final-1.mp4
-    # If you need to provide the service externally using a domain name (usually done with nginx as a proxy), you can set it to your domain name.
+    # If you need to provide the services externally using a domain name (usually done with nginx as a proxy), you can set it to your domain name.
     # For example, https://xxxx.com/tasks/6357f542-a4e1-46a1-b4c9-bf3bd0df5285/final-1.mp4
     # endpoint="https://xxxx.com"
     endpoint=""

@@ -35,7 +35,6 @@ Name: ar-AE-FatimaNeural
 Gender: Female
 
 Name: ar-AE-HamdanNeural
-Gender: Male
 
 Name: ar-BH-AliNeural
 Gender: Male
@@ -1014,20 +1013,27 @@ Name: zh-CN-XiaoxiaoMultilingualNeural-V2
 Gender: Female
     """.strip()
     voices = []
-    # 定义正则表达式模式，用于匹配 Name 和 Gender 行
-    pattern = re.compile(r"Name:\s*(.+)\s*Gender:\s*(.+)\s*", re.MULTILINE)
-    # 使用正则表达式查找所有匹配项
-    matches = pattern.findall(voices_str)
-
-    for name, gender in matches:
-        # 应用过滤条件
-        if filter_locals and any(
-            name.lower().startswith(fl.lower()) for fl in filter_locals
-        ):
-            voices.append(f"{name}-{gender}")
-        elif not filter_locals:
-            voices.append(f"{name}-{gender}")
-
+    name = ""
+    for line in voices_str.split("\n"):
+        line = line.strip()
+        if not line:
+            continue
+        if line.startswith("Name: "):
+            name = line[6:].strip()
+        if line.startswith("Gender: "):
+            gender = line[8:].strip()
+            if name and gender:
+                # voices.append({
+                #     "name": name,
+                #     "gender": gender,
+                # })
+                if filter_locals:
+                    for filter_local in filter_locals:
+                        if name.lower().startswith(filter_local.lower()):
+                            voices.append(f"{name}-{gender}")
+                else:
+                    voices.append(f"{name}-{gender}")
+                name = ""
     voices.sort()
     return voices
 
@@ -1145,7 +1151,7 @@ def azure_tts_v2(text: str, voice_name: str, voice_file: str) -> Union[SubMaker,
                 sub_maker.subs.append(evt.text)
                 sub_maker.offset.append((offset, offset + duration))
 
-            # Creates an instance of a speech config with specified subscription key and service region.
+            # Creates an instance of a speech config with specified subscription key and services region.
             speech_key = config.azure.get("speech_key", "")
             service_region = config.azure.get("speech_region", "")
             audio_config = speechsdk.audio.AudioOutputConfig(
